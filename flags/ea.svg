@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1000" height="600">
+  <title>Flagge der gesamtdeutschen Olympiamannschaft</title>
+  <desc>Flagge der Gesamtdeutsche Mannschaft waehrend der olympischen Spiele von 1960 bis 1968</desc>
+  <rect width="1000" height="600" fill="#FFCE00"/>
+  <rect width="1000" height="400" fill="#d00"/>
+  <rect width="1000" height="200" fill="#000"/>
+  <circle cx="366" cy="273" r="55" fill="none" stroke="white" stroke-width="12"/>
+  <g id="ri" fill="none" stroke="white" stroke-width="12">
+    <circle cx="500" cy="273" r="55"/>
+    <circle cx="433" cy="327" r="55" stroke="#d00" stroke-width="16"/>
+    <circle cx="433" cy="327" r="55"/>
+  </g>
+  <g id="pr2">
+    <g id="pr" fill="none" stroke="#d00" stroke-width="2" transform="rotate(45,366,273)">
+      <path d="M 366,225 a 48,48 0 0,1 48,48 M 366,211 a 62,62 0 0,1 62,62"/>
+      <path d="M 366,218 a 55,55 0 0,1 55,55" stroke="white" stroke-width="12"/>
+    </g>
+    <use xlink:href="#pr" transform="translate(134) rotate(90,366,273)"/>
+  </g>
+  <use x="134" xlink:href="#ri"/>
+  <use x="134" xlink:href="#pr2"/>
+</svg>

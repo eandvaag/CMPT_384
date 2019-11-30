@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+
+<!--
+  Erik Andvaag
+  NSID: eaa299
+  Student ID: 11199809
+
+  Dr. Debajyoti Mondal
+  CMPT 384.3
+-->
+
+<!-- Assignment 6 -->
+
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Modern Olympic Results</title>
+    <script type="text/javascript" src="https://d3js.org/d3.v5.min.js"></script>
+    <script src="https://unpkg.com/d3-simple-slider"></script>
+    <script src="http://ariutta.github.io/svg-pan-zoom/dist/svg-pan-zoom.min.js"></script>
+    <script src="virtualScroller.js"></script>
+    <script type="text/javascript" src="olympic.js"></script>
+</head>
+<style>
+body {
+  font-family: "Helvetica Neue", Helvetica, sans-serif;
+  font-size: 14px;
+  color: #333;
+}
+</style>
+
+<body>
+  <div style="text-align: center">
+  <div id="title" width="1345" style="display: inline-block">
+  <h2>
+    Modern Olympic Results
+  </h2>
+  </div>
+  </div>
+<br>
+<!--
+  <div id="controls">
+    <input type="checkbox" name="box1" value="checked">checkbox1</input>
+  </div>
+-->
+
+  <div id="control" style="height: 625px !important;
+  width: 335px !important;
+  border:1px solid #000;
+  display: inline-block;"></div>
+
+
+
+  <div id="chart" style=
+  "width: 675px !important;
+   border:1px solid #000;
+   display: inline-block"></div>
+<!--
+  <div id="sidebar" width="500" height="625" style="display: inline-block" overflow="scroll !important"></div>
+-->
+<!--
+  <div id="sidebar" width="960 !important" height="500 !important" style="display: inline-block" overflow="scroll !important"></div>
+-->
+
+  <div id="sidebar" style="height: 625px !important;
+  width: 335px !important;
+  border:1px solid #000;
+  overflow-y: scroll !important;
+  display: inline-block;"></div>
+
+  
+  <div id="slider-time" align="center"></div>
+<!--
+  <div id="sidebar_temp"></div>
+-->
+
+<!--
+    <div id="sidebar_background"></div>
+    <div id="sidebar_chart"></div>
+-->
+</body>
+</html>
