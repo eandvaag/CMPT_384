@@ -22,57 +22,29 @@ var sidebar_axis;
 var padding = 15;
 
 
-var current_selection;
-
-//const state = {
-//  ALL: 1,
-//  EXPORT: 2,
-//  IMPORT: 3
-//};
-const genderCategory = {
-  ALL: 1,
-  MEN: 2,
-  WOMEN: 3
-};
-
-
-const medalCategory = {
-  ALL: 1,
-  ALL_ADJ: 2,
-  GOLD: 3
-};
-
-//var currentState = state.ALL;
-
-//var relations;
-//var uniqueRelations = {};
-
-
+var current_selection = null;
 
 var width = 675;
 var height = 625;
 
-var sidebar_x = 675;//(2 * width) / 3;
-var sidebar_y = 0;//height / 2;
+var sidebar_x = 675;
+var sidebar_y = 0;
 var sidebar_w = 300;
 var sidebar_h = height;
 var sidebar_created = false;
-//var sidebar_buttons;
 var button_r = 20;
-//var button_groups;
 
 
 var control_h = height;
 var control_w = 335;
 
-//var padding = 100;
-//var opacityScale;
-//var projection;
 var year_list = [];
 var year_res = {};
 var year_sports = {};
 var year_events = {};
 var year_strat = {};
+var year_city_map = {};
+
 
 var pictogram_lookup = {};
 var flag_lookup = {};
@@ -82,10 +54,11 @@ var zoom_g = d3.zoom();
 var selected_year = 1896;
 
 
-/* EVENTS */
 var selected_gender = "All";
+var selected_medal = "Gold";
 
-d3.csv("olympic_data.csv").then(function(data, error) {
+
+d3.csv("olympic_data.csv" + '?' + Math.floor(Math.random() * 1000)).then(function(data, error) {
 
   var results;
   if (error)
@@ -93,30 +66,28 @@ d3.csv("olympic_data.csv").then(function(data, error) {
   else
     results = data;
 
-  d3.csv("pictogram_lookup.csv").then(function(p_data, p_error) {
+  d3.csv("pictogram_lookup.csv" + '?' + Math.floor(Math.random() * 1000)).then(function(p_data, p_error) {
     if (p_error)
       console.log(p_error);
-    else
+    else {
       p_data.forEach(function(d){
         pictogram_lookup[d.sport] = d.image;
       });
-//      pictogram_lookup = p_data;
+    }
 
-    d3.csv("flag_lookup.csv").then(function(f_data, f_error) {
+    d3.csv("flag_lookup.csv" + '?' + Math.floor(Math.random() * 1000)).then(function(f_data, f_error) {
       if (f_error)
         console.log(f_error);
-      else
+      else {
+        console.log("found flag lookup");
         f_data.forEach(function(d) {
+          if (d.three_char === "EUN")
+            console.log("found EUN");
           flag_lookup[d.three_char] = { "full": d.full_name,
                                         "two_char": d.two_char };
         });
-
+      }
     
-
-
-    console.log("pictogram_lookup", pictogram_lookup); 
-    console.log("flag_lookup", flag_lookup);
-
     var year;
     var sport;
     var dEvent;
@@ -126,9 +97,6 @@ d3.csv("olympic_data.csv").then(function(data, error) {
       sport = results[i].Sport;
       dEvent = results[i].Event;
 
-  //    results[i].id = results[i].Event;
-  //    results[i].parentId = sport;
-
       if (!(year in year_res)) {
         year_root = {id: year};
         year_res[year] = [];
@@ -136,12 +104,9 @@ d3.csv("olympic_data.csv").then(function(data, error) {
 
         year_sports[year] = [];
         year_events[year] = {};
-      }
 
-  //    if (!(year_events[year].includes(dEvent))) {
-  //      year_events[year].push(dEvent);
-  //      
-  //    }
+        year_city_map[year] = results[i].City;
+      }
 
 
       if (!(sport + "_" + dEvent in year_events[year])) {
@@ -151,29 +116,14 @@ d3.csv("olympic_data.csv").then(function(data, error) {
                                      members: []};
       }
 
-  //    console.log(year_events[year][dEvent]);
       year_events[year][sport + "_" + dEvent].members.push(results[i]);
-  //      year_res[year].push({id: dEvent, parentId: sport});
-  //    }
-  //    else {
-  //      year_events[year][dEvent]
 
       if (!(year_sports[year].includes(sport))) {
         year_sports[year].push(sport);
         year_res[year].push({id: sport, parentId: year});
 
       }
-
-  //    for (var i = 0; i < Object.values(year_res).length; i++) {
-        
-  //    }
-  //    for (var i = 0; i < Object.values(year_events).length; i++) {
-  //      for (var j = 0; j < Object.values(year_events)[i].length; j++) {
-  //        year_res[Object.values(year_events)[i][j]
-  //      }
-         // year_res[year].push({id: dEvent, parentId
-      
-
+     
     }
     
     for (var year of Object.keys(year_events)) {
@@ -182,25 +132,16 @@ d3.csv("olympic_data.csv").then(function(data, error) {
       }
     }
 
-  /*  for (var i = 0; i < results.length; i++) {
-      if (!results[i].Sport in sports)
 
-      results[i].parentId = results[i].Sport;
-
-    }
-  */
-  //  console.log(data);
-    console.log("year_res", year_res);
-    console.log("year_sports", year_sports);
+    year_city_map[1916] = "No Games";
+    year_city_map[1940] = "No Games";
+    year_city_map[1944] = "No Games";
 
     for (var i = 0; i < Object.values(year_res).length; i++) {
       year_strat[Object.keys(year_res)[i]] = d3.stratify()(Object.values(year_res)[i]);
-      //year_strat.push(d3.stratify()(Object.values(year_res)[i]));
     }
-    console.log("year_strat", year_strat);
 
     initPlot();
-    drawPlot();
 
     });
 
@@ -214,25 +155,14 @@ function initPlot() {
           .append("svg")
           .attr("viewBox", [0, 0, width, height])
           .attr("width", width)
-          .attr("height",height);
-//          .attr("id", "svgTree")
-
-  //var panZoomTree = svgPanZoom("#svgTree");//d3.select("#svgTree").select("svg"));
-
-  //var svgElement = document.querySelector("#svgTree");
- // var panZoomTree = svg
+          .attr("height",height)
+          .attr("style", "background-color:rgb(47, 69, 69)");
 
   g = d3.select("#chart")
         .select("svg")
-//      d3.selectAll("svg")
-//      svg.
-//      svg.select("svg")
-//               .attr("id", "nodeTree")
-//               .append("svg")
         .append("g")
         .attr("width", (width))
         .attr("height", (height))
-//        .select("g")
         .attr("transform", "translate(" + width/2 + "," + height/2 + ")")
         .attr("cursor", "grab");
 
@@ -242,14 +172,12 @@ function initPlot() {
                    .attr("width", width)
                    .attr("height", height);
 
-//  var transform = d3.zoomIdentity;
   var zoom = svg.call(zoom_g
       .extent([[0, 0], [width, height]])
-//      .translateExtent([[-width, -height], [width, height]])
       .scaleExtent([0.1, 2])
       .on("zoom", zoomed));
 
-  zoom_g.scaleTo(svg, 0.6);//, [width/2,height/2]);
+  zoom_g.scaleTo(svg, 0.6);
   zoom_g.translateTo(svg, -width/10 + padding * 3, -height/10 + padding * 3);
 
   control = d3.select("#control")
@@ -257,42 +185,40 @@ function initPlot() {
                .attr("width", control_w)
                .attr("height", control_h);
 
-  sidebar_background = d3.select("#sidebar")
-              .select("svg")
-              .append("g");
-
-
   control_background = d3.select("#control")
                          .select("svg")
                          .append("g");
 
   control_background
-//         .selectAll("rect")
          .append("rect")
+         .attr("class", "chart_bg")
          .attr("x", 0)
          .attr("y", 0)
          .attr("height", control_h)
          .attr("width", control_w)
-         .attr("fill", "hsl(" + 120 + "," + 73 + "%," + 85 + "%)")
          .attr("id", "background_rect");
 
-
-  control_buttons = d3.select("#control")
+  gender_buttons = d3.select("#control")
                       .select("svg")
                       .append("g")
-                      .attr("id", "control_buttons");
+                      .attr("id", "gender_buttons");
+
+  medal_buttons = d3.select("#control")
+                      .select("svg")
+                      .append("g")
+                      .attr("id", "medal_buttons");
 
 
-  control_buttons.selectAll("g.button")
+  gender_buttons.selectAll("g.button")
                         .data(["All", "Men", "Women"])
                         .enter()
                         .append("g")
                         .attr("class", "button")
                         .style("cursor", "pointer")
                         .on("click", function(d, i) {
-                          //d3.select(
-                          prev_gender_selection.select("circle").attr("fill", "lightgreen");
-                          d3.select(this).select("circle").attr("fill", "darkgreen");
+                          console.log("this", this);
+                          prev_gender_selection.select("circle").attr("fill", "rgb(225, 255, 205)");
+                          d3.select(this).select("circle").attr("fill", "rgb(155, 185, 135)");
                           prev_gender_selection = d3.select(this);
                           selected_gender = d;
                           drawPlot();
@@ -300,39 +226,77 @@ function initPlot() {
                             node_update();
                           }
                         })
-                        .attr("id", function(d) { return "#" + d; });
-  var prev_gender_selection = d3.select("#All");
+                        .attr("id", function(d) { return "#" + d + "_gender"; });
+
+  var prev_gender_selection = d3.select("#All_gender");
+
+  document.getElementById("#All_gender").dispatchEvent(new Event("click"));
+
   var button_w = control_w - (padding * 4);
 
+
+  medal_buttons.selectAll("g.button")
+                        .data(["Gold", "All", "All_Adjusted"])
+                        .enter()
+                        .append("g")
+                        .attr("class", "button")
+                        .style("cursor", "pointer")
+                        .on("click", function(d, i) {
+                          console.log("this", this);
+                          prev_medal_selection.select("circle").attr("fill", "rgb(225, 255, 205)");
+                          d3.select(this).select("circle").attr("fill", "rgb(155, 185, 135)");
+                          prev_medal_selection = d3.select(this);
+                          selected_medal = d;
+                          drawPlot();
+                          if (sidebar_created) {
+                            node_update();
+                          }
+                        })
+                        .attr("id", function(d) { return "#" + d + "_medal"; });
+
+  var prev_medal_selection = d3.select("#Gold_medal");
+
+  document.getElementById("#Gold_medal").dispatchEvent(new Event("click"));
+
+
+  gender_buttons.selectAll("g.button")
+                .append("circle")
+                .attr("cx", function(d, i) {
+                        return (padding * 2) + (i + 0.5) * (button_w / 3);
+               })
+               .attr("cy", control_h / 3)
+               .attr("r", button_r)
+               .attr("stroke", "black")
+               .attr("stroke-width", 1)
+               .attr("fill", "rgb(225, 255, 205)");
   
 
-  control_buttons.selectAll("g.button")
-//                 .data(["All", "Men", "Women"])
-//                .enter()
-               .append("circle")
-               .attr("class", "button_circle")
-//               .attr("width", padding)
-//               .attr("height", padding)
-               .attr("cx", function(d, i) {
-                        return (padding * 2) + (i + 0.5) * (button_w / 3);// padding + i * (sidebar_w - 2 * padding) / 2;
-               })
-               .attr("cy", padding * 6)
-               .attr("r", button_r)
-               .attr("fill", "lightgreen")
-               .attr("stroke", "black")
-               .attr("stroke-width", 1);
+  prev_gender_selection.select("circle").attr("fill", "rgb(155, 185, 135)");
 
-  prev_gender_selection.select("circle").attr("fill", "darkgreen");
+
+  medal_buttons.selectAll("g.button")
+                .append("circle")
+                .attr("cx", function(d, i) {
+                        return (padding * 2) + (i + 0.5) * (button_w / 3);
+               })
+               .attr("cy", 2 * control_h / 3)
+               .attr("r", button_r)
+               .attr("stroke", "black")
+               .attr("stroke-width", 1)
+               .attr("fill", "rgb(225, 255, 205)");
+
+  prev_medal_selection.select("circle").attr("fill", "rgb(155, 185, 135)");
 
 
   var gender_text = ["All", "Men", "Women"];
 
-  control_buttons.selectAll("g.button")
+  gender_buttons.selectAll("g.button")
                     .append("text")
+                    .attr("class", "button_text")
                     .attr("x", function(d, i) {
-                        return (padding * 2) + (i + 0.5) * (button_w / 3);// padding + i * (sidebar_w - 2 * padding) / 2;
+                        return (padding * 2) + (i + 0.5) * (button_w / 3);
                     })
-                    .attr("y", padding * 9)
+                    .attr("y", (control_h / 3) + 3 * padding)
                     .attr("text-anchor", "middle")
                     .attr("font-size", 16)
 
@@ -341,170 +305,129 @@ function initPlot() {
                         return gender_text[i];
                     });
 
+  var medal_text = ["Gold", "All", "All Adjusted"];
 
- // control_background.append("text")
+  medal_buttons.selectAll("g.button")
+                    .append("text")
+                    .attr("class", "button_text")
+                    .attr("x", function(d, i) {
+                        return (padding * 2) + (i + 0.5) * (button_w / 3);
+                    })
+                    .attr("y", (2 * control_h / 3) + 3 * padding)
+                    .attr("text-anchor", "middle")
+                    .attr("font-size", 16)
 
-
-//  svg.call(zoom);
-//  svg.call(zoom.transform, center);
-/*
-  sidebar = d3.select("#sidebar")
-              .append("svg");
-              .attr("width", sidebar_w)
-              .attr("height", sidebar_h);
-//              .attr("transform", "translate(" + sidebar_x + "," + sidebar_y + ")");
-*/
-
-/*
-  var m = [20, 120, 20, 120],
-      w = 1280 - m[1] - m[3],
-      h = 1800 - m[0] - m[2];
-
-
-  sidebar = d3.select("#sidebar")
-              .append("svg")
-//              .attr("width", w + m[1] + m[3])
-//              .attr("height", h + m[0] + m[2])
-
-              .attr("width", sidebar_w)
-              .attr("height", sidebar_h * 2);
-              //.attr("viewBox", [0, 0, sidebar_w, sidebar_h]); //sidebar_w, sidebar_h])
-          //    .attr("overflow", "scroll");
-
-//              .attr("transform", "translate(" + sidebar_x + "," + sidebar_y + ")");
-
-
-
-
-//  sidebar.select("svg")
-//         .append("g")
-//         .attr("id", "sidebar_background");
-
-//  sidebar.select("svg")
-//         .append("g")
-//         .attr("id", "sidebar_chart");
-
-
-            //d3.selectAll("svg")
-//  sidebar.select("#sidebar_background")//.selectAll("svg")
-//              .attr("id", "sidebar")
-//              .append("svg")
-
-  sidebar_background = d3.select("#sidebar")
-              .select("svg")
-              .append("g");
-
-
-
-              //.attr("width", sidebar_w)
-              //.attr("height", sidebar_h * 2);
-//              .attr("transform", "translate(" + width/2 + "," + height/2 + ")");
-
-//              .attr("transform", "translate(" + sidebar_x + "," + sidebar_y + ")");
-
-
-//  sidebar.select("#sidebar_chart")//.selectAll("svg")
-//              .attr("id", "sidebar")
-//              .append("svg")
-  sidebar_chart = d3.select("#sidebar")
-              .select("svg")
-              .append("g");
-//              .attr("viewBox", [0, 0, sidebar_w, sidebar_h/2])
-              //.attr("cursor", "grab");
-              //.attr("width", sidebar_w)
-              //.attr("height", sidebar_h * 2);
-//              .attr("transform", "translate(" + width/2 + "," + height/2 + ")");
-
-//              .attr("transform", "translate(" + sidebar_x + "," + sidebar_y + ")");
-  sidebar_buttons = d3.select("#sidebar")
-                      .select("svg")
-                      .append("g")
-                      .attr("id", "sidebar_buttons");
-
-
-  sidebar_axis = d3.select("#sidebar")
-         .select("svg")
-//  sidebar.select("svg")
-         .append("g")
-         .attr("transform", "translate(" + padding + "," + (6 * padding) + ")");
-         //.attr("class", "axis")
-         
-//
-//  d3.select("#title")
-//    .selectAll("text")
-//    .append("text")
-//    .attr("font-size", 40)
-//    .text("Modern Olympic Results");
-//
-*/
-
-  sidebar = d3.select("#sidebar")
-              .append("svg");
-
+                    .text(function(d, i) {
+                        return medal_text[i];
+                    });
 
   var dataTime = d3.range(0, 2009-1896, 4).map(function(d) {
                     return new Date(1896 + d, 10, 3);
   });
-    
-
-//    return new Data(
+  
 
   var sliderTime = d3.sliderBottom()
-                     //.data(year_res[year].keys())
-                     //.min(d3.min(data))
-                     //.max(d3.max(data))
-                     //.min("1900")
-                     //.max("1904")
                      .min(d3.min(dataTime))
                      .max(d3.max(dataTime))
-                     //.min(d3.min(Object.keys(year_res), function(d) { return parseInt(d); }))
-                     //.max(d3.max(Object.keys(year_res), function(d) { return parseInt(d); }))
-                     //.step(4)
                      .step(4 * 1000 * 60 * 60 * 24 * 365)
                      .width(800)
                      .tickFormat(d3.timeFormat("%Y"))
-                     //.tickValues(["1900", "1904"]);
                      .default(new Date(1896, 10, 3))
                      .tickValues(dataTime)
                      .on("onchange", val => {
-                        //drawPlot;
-                        if (!(parseInt(selected_year) === 1900 + val.getYear()))
+                        if (!(parseInt(selected_year) === 1900 + val.getYear())) {
                           remove_sidebar();
-                          sidebar.append("svg");
-    zoom_g.scaleTo(svg, 0.6);//, [width/2,height/2]);
-    zoom_g.translateTo(svg, -width/10 + padding * 3, -height/10 + padding * 3);
 
-
-
-                                //= d3.select("#sidebar")
-                                //      .append("svg")
+                          zoom_g.scaleTo(svg, 0.6);
+                          zoom_g.translateTo(svg, -width/10 + padding * 3, -height/10 + padding * 3);
                           
                           selected_year = Math.round(1900 + val.getYear());
+
+                          d3.select("#control_title").text(year_city_map[selected_year] + ": " + selected_year);
+
                           drawPlot();
-                        //console.log("val", 1900 + val.getYear());
-                        //console.log("year : ", d3.select("p#value-time").text(d3.timeFormat("%Y")(val)));
+                          if (selected_year in year_res) {
+                            yearSidebar(selected_year);
+                          }
+                          updateControlText();
+                        }
                      });
   console.log("keys(year_res)", Object.keys(year_res));
 
   
   var gTime = d3.select("#slider-time")
                 .append("svg")
-                .attr("width", 1200)
+                .attr("width", 860)
                 .attr("height", 100)
                 .append("g")
-                .attr("transform", "translate(30, 30)");
+                .attr("transform", "translate(30, 30)")
+                .attr("fill", "ghostwhite");
 
   gTime.call(sliderTime);
 
+  drawPlot();
+  yearSidebar(selected_year);
+  updateControlText();
 
+  control_background.append("line")
+                    .attr("x1", 0)
+                    .attr("y1", (1/3) * control_h - padding * 6)
+                    .attr("x2", control_w)
+                    .attr("y2", (1/3) * control_h - padding * 6)
+                    .attr("stroke", "ghostwhite");
+
+  control_background.append("line")
+                    .attr("x1", 0)
+                    .attr("y1", (2/3) * control_h - padding * 6)
+                    .attr("x2", control_w)
+                    .attr("y2", (2/3) * control_h - padding * 6)
+                    .attr("stroke", "ghostwhite");
+
+
+  control_background.append("line")
+                    .attr("x1", 0)
+                    .attr("y1", (3/3) * control_h - padding * 6)
+                    .attr("x2", control_w)
+                    .attr("y2", (3/3) * control_h - padding * 6)
+                    .attr("stroke", "ghostwhite");
+}
+
+function updateControlText() {
+
+  console.log("selected year", selected_year);
+  control_background.selectAll("text").remove();
+
+  /* Control title text */  
+  control_background
+         .append("text")
+         .attr("class", "chart_title")
+         .attr("x", sidebar_w / 2)
+         .attr("y", padding * 3)
+         .attr("text-anchor", "middle")
+         .text(year_city_map[selected_year] + ": " + selected_year)
+         .call(wrap, control_w, control_w / 2)
+         .attr("id", "#control_title");
+
+  control_background
+         .append("text")
+         .attr("class", "chart_title")
+         .attr("x", control_w / 2)
+         .attr("y", (1/3) * control_h - padding * 3)
+         .attr("text-anchor", "middle")
+         .text("Gender Category")
+         .call(wrap, control_w, control_w / 2)
+
+  control_background
+         .append("text")
+         .attr("class", "chart_title")
+         .attr("x", control_w / 2)
+         .attr("y", (2/3) * control_h - padding * 3)
+         .attr("text-anchor", "middle")
+         .text("Medal Category")
+         .call(wrap, control_w, control_w / 2)
 
 }
-/*
-function update_button_colour(button) {
-  button
 
-});
-*/
 
 function drawPlot() {
   console.log("in drawPlot");
@@ -525,26 +448,19 @@ function drawPlot() {
     else
       message = "No olympics held due to WW2";
 
-    g2//.selectAll("text")
-     .append("text")
-     .attr("x", width/2)
-     .attr("y", height/2)
-     .attr("text-anchor", "middle")
-     .attr("font-size", 24)
-     .text(message);
+    g2.append("text")
+      .attr("class", "chart_title")
+      .attr("x", width/2)
+      .attr("y", height/2)
+      .attr("text-anchor", "middle")
+      .text(message);
 
   }
 
   else {
 
-    
-
     var data = year_strat[selected_year];
-//    var layout = d3.cluster().size([2 * Math.PI, Math.min(width/2, height/2)/2 - 10]);
-    console.log("NUMBER", (Math.sqrt(year_res[selected_year].length) * 50) - 10.1);
     var layout = d3.cluster().size([2 * Math.PI, (Math.sqrt(year_res[selected_year].length) * 50) - 10.1]);
-    //var layout = d3.cluster().size([2 * Math.PI, Math.sqrt(year_res[selected_year].length) - 10]);
-    console.log(layout);
 
     var root = d3.hierarchy(data);
     var nodes = root.descendants();
@@ -553,13 +469,9 @@ function drawPlot() {
 
     var zoom_k = (Math.sqrt(year_res[selected_year].length) * 100) - 10.1;
 
-//    var zoom_k = year_res[selected_year].length / year_res[1896].length;
     zoom_g.translateExtent([[-zoom_k, -zoom_k], 
                             [zoom_k, zoom_k]]);
-/*
-    zoom_g.scaleTo(svg, 0.6);//, [width/2,height/2]);
-    zoom_g.translateTo(svg, -width/10 + padding * 3, -height/10 + padding * 3);
-*/
+
     sportNodes = [];
     eventNodes = [];
     for (var i = 0; i < nodes.length; i++) {
@@ -567,28 +479,15 @@ function drawPlot() {
         sportNodes.push(nodes[i]);
       else if (year_sports[selected_year].includes(nodes[i].data.data.parentId))
         eventNodes.push(nodes[i]);
+      else if (current_selection == null)
+        current_selection = nodes[i];
     }
-/* 
-    g2.append("rect")
-     .attr("x", 0)
-     .attr("y", 0)
-     .attr("width", width)
-     .attr("height", height)
-     .attr("fill", "none")
-     .attr("stroke", "black")
-     .attr("stroke-width", 2);
-*/
-
-   //  .attr("fill", "lightyellow");
-
-
-    
-    //d3.select("#chart").select("svg").select("g2").moveToBack();
 
     g.selectAll("path")
      .data(links)
      .enter()
      .append("path")
+     .attr("class", "branch")
      .attr("d", d3.linkRadial()
                   .angle(function(d) { return d.x; })
                   .radius(function(d) { return d.y; }))
@@ -596,13 +495,10 @@ function drawPlot() {
      .attr("stroke", "black")
      .attr("stroke-width", 2)
      .attr("opacity", function(d) {
-//            console.log("link", d);
-//        return 1;
 
         if (year_sports[selected_year].includes(d.source.data.id)) {
           for (var i = 0; i < d.target.data.data.members.length; i++) {
             if (selected_gender_list().includes(d.target.data.data.members[i].Gender))
-            //if current_genders.includes(d.data.data.members[i].Gender) {
               return 0.6;
           }
           return 0;
@@ -611,58 +507,40 @@ function drawPlot() {
 
       });
 
-//     .attr("opacity", 0.6);
-
     g.selectAll("circle")
      .data(nodes)
      .enter()
      .append("circle")
      .attr("transform", function(d) { return "translate(" + d3.pointRadial(d.x, d.y) + ")"; })
-  //   .attr("transform", function(d){ return "rotate(" + (d.x - 90) + ")translate(" + d.y + ")"; })
      .attr("r", function(d) {
       if (d.data.data.parentId in year_strat)
         return 20;
       else
         return 10;
      })
-     .attr("fill", function(d) {
+     .attr("class", function(d) {
       if (d.data.data.parentId in year_strat)
-        //return "lightgreen";
-        return "hsl(" + 120 + "," + 73 + "%," + 85 + "%)";
+        return "green";
       else
-        return "lightblue";
+        return "blue";
       })
      .attr("opacity", function(d) {
-//            console.log("d.data.data", d.data.data);
 
         if (year_sports[selected_year].includes(d.data.data.parentId)) {
           for (var i = 0; i < d.data.data.members.length; i++) {
             if (selected_gender_list().includes(d.data.data.members[i].Gender))
-            //if current_genders.includes(d.data.data.members[i].Gender) {
               return 1;
           }
           return 0;
         }
         return 1;
       })
-
-
-
       .on("click", function(d) {
         current_selection = d;
-        node_update(sportNodes);
+        node_update();
       })
       .attr("cursor", "pointer"); 
-/*
-    .on("mouseover", function(d) {
-        node_update(d, sportNodes);
-      })
-     .on("mouseout", function(d) {
-        remove_sidebar();
-      });
-*/
 
-    console.log("sportNodes", sportNodes); 
     g.selectAll("image")
       .data(sportNodes)
       .enter()
@@ -678,7 +556,7 @@ function drawPlot() {
       })
       .on("click", function(d) {
         current_selection = d;
-        node_update(sportNodes);
+        node_update();
       })
       .attr("cursor", "pointer");
 
@@ -687,102 +565,44 @@ function drawPlot() {
      .data(eventNodes)
      .enter()
      .append("text")
+     .attr("class", "chart_text")
      .attr("x", 10)
-  //   .attr("dx", ".35em")
      .attr("dy", ".35em")
-  //   .attr("text-anchor", "start")
-  //   .attr("text-anchor", function(d) {
-  //      if (d.x < 180)
-  //        return "start";
-  //      else
-  //        return "end";
-  //    })
-     //.attr("transform", function(d) { return d.x < 180? "translate(" + d3.pointRadial(d.x, d.y) + ")" : "rotate(180)translate(" + d3.pointRadial(d.x, d.y) + ")";})
-
-  //   .attr("transform", function(d){ return "rotate(" + (d.x * (180/Math.PI) - 90) + ")translate(" + d.y + ")"; })
-
-
      .attr("transform", function(d) { 
         var initial_rotate = (d.x * (180/Math.PI) - 90 );
         var initial_translate = d.y;
-        //var initial_translate = d3.pointRadial(d.x, d.y);
-
-
         if (initial_rotate < 90 || initial_rotate > 270) 
-          return "rotate(" + initial_rotate + ")translate(" + initial_translate + 18 + ")";
+          return "rotate(" + initial_rotate + ")translate(" + (initial_translate + 10) + ")";
         else
-          return "rotate(" + (initial_rotate + 180) + ")translate(" + (-initial_translate + -20) + ")"; })
+          return "rotate(" + (initial_rotate + 180) + ")translate(" + (-initial_translate + -30) + ")"; })
 
      .attr("text-anchor", function(d) { 
         if (((d.x * (180/Math.PI) - 90 ) >= 90) && (d.x * (180/Math.PI) - 90 ) <= 270) 
           return "end";
-  //        return d.x * (180/Math.PI) < 180 ? "start" : "end"; 
         else
           return "start";    
       })
-
-  //   .attr("transform", function(d) { return "rotate(" + (d.x * (180/Math.PI)) + ")translate(" + d3.pointRadial(d.x, d.y) + ")"; })
-     //.attr("transform", function(d) { return d.x < Math.PI ? "translate(8)" : "rotate(180)translate(-8)"; })
-     //.attr("transform", function(d) { return "rotate(" + d3.pointRadial(d.x, d.y) + ")"; })
-     //.attr("transform", function(d) { return d.x < 180 ? "translate(0)" : "rotate(180)translate(-" + (d.data.id.length + 50)  + ")"; })
-  //   .attr("text-anchor", "start")
      .text(function(d) { 
-        return d.data.id; })
-  //   .attr("transform", function(d) { return "rotate(180)translate(-" + (d.data.id.length + 50)  + ")"; })
-  //   .style("fill-opacity", 1e-6)
-  //   .attr("stroke", "black");
-
-      // Interaction
-
-  //  updateSidebar(nodes);
-   // var panZoomTree = svgPanZoom("#svgTree");
-    console.log("done drawing");
+        for (var i = 0; i < d.data.data.members.length; i++) {
+          if (selected_gender_list().includes(d.data.data.members[i].Gender))
+            return d.data.id.capitalize(); 
+        }
+        return ""; 
+    })
   }
 }
 
 function remove_sidebar() {
-/*
-  sidebar_background.selectAll("rect").remove();
-  sidebar_chart.selectAll("rect").remove();
-  sidebar_background.selectAll("text").remove();
-  sidebar_chart.selectAll("text").remove();
-  sidebar_background.selectAll("circle").remove();
-  sidebar_chart.selectAll("circle").remove();
-  sidebar_background.selectAll("image").remove();
-  sidebar_chart.selectAll("image").remove();
-
-  sidebar_axis.style("visibility", "invisible");
-
-  sidebar_buttons.selectAll("g.button").selectAll("circle").remove();
-  sidebar_buttons.selectAll("g.button").remove();
-*/
   sidebar_created = false;
   sidebar.remove();
 
 }
 
-function node_update(sportNodes) {
+function node_update() {
 
   remove_sidebar();
-/*
-  sidebar_background.selectAll("rect").remove();
-  sidebar_chart.selectAll("rect").remove();
-  sidebar_background.selectAll("text").remove();
-  sidebar_chart.selectAll("text").remove();
-  sidebar_background.selectAll("circle").remove();
-  sidebar_chart.selectAll("circle").remove();
-  sidebar_background.selectAll("image").remove();
-  sidebar_chart.selectAll("image").remove();
-
-  sidebar_buttons.selectAll("g.button").selectAll("circle").remove();
-  sidebar_buttons.selectAll("g.button").remove();
-*/  
-
-//  button_groups.selectAll("circle").remove();
-
-//  console.log("node", node);
   if (current_selection.data.data.id in year_res) {
-    yearSidebar(sportNodes);
+    yearSidebar(current_selection.data.data.id);
   }
   else if (current_selection.data.data.parentId in year_res) {
     sportSidebar();
@@ -792,26 +612,20 @@ function node_update(sportNodes) {
   }
 }
 
-function yearSidebar(nodes) {
-
-  console.log("the year is: ", current_selection.data.data.id);
+function yearSidebar(year) {
 
   var sportList = [];
   for (var i = 0; i < sportNodes.length; i++) {
     sportList.push(sportNodes[i].data.data.id);
-//    sPairs = sportCountryCounts(node, genderCategory.ALL, medalCategory.GOLD);
-//    for (var j = 0; j < sPairs.length; j++) {
-//      if (sPairs[j] in pairs)
-//    pairs.push(sPairs);
   }
-  var pairs = sportCountryCounts(sportList, medalCategory.GOLD);
+  var pairs = sportCountryCounts(sportList);
 
-  drawBars(current_selection.data.data.id + ": Overall Results", pairs);
+  drawBars(year + ": Overall Results", pairs);
 
 }
 
 function sportSidebar() {
-  var pairs = sportCountryCounts([current_selection.data.data.id], medalCategory.GOLD);
+  var pairs = sportCountryCounts([current_selection.data.data.id]);
 
   drawBars(current_selection.data.data.id, pairs);
 
@@ -829,32 +643,16 @@ function create_sidebar(is_event, num_items) {
     sidebar_height = Math.max(sidebar_h, padding * 7 + num_items * 20);
   }
 
+
   sidebar = d3.select("#sidebar")
               .append("svg")
-//              .attr("width", w + m[1] + m[3])
-//              .attr("height", h + m[0] + m[2])
-
               .attr("width", sidebar_w)
               .attr("height", sidebar_height);
-              //.attr("height", sidebar_h * 2);
-
 
   sidebar_background = d3.select("#sidebar")
               .select("svg")
               .append("g");
 
-
-
-              //.attr("width", sidebar_w)
-              //.attr("height", sidebar_h * 2);
-//              .attr("transform", "translate(" + width/2 + "," + height/2 + ")");
-
-//              .attr("transform", "translate(" + sidebar_x + "," + sidebar_y + ")");
-
-
-//  sidebar.select("#sidebar_chart")//.selectAll("svg")
-//              .attr("id", "sidebar")
-//              .append("svg")
   sidebar_chart = d3.select("#sidebar")
               .select("svg")
               .append("g");
@@ -862,7 +660,6 @@ function create_sidebar(is_event, num_items) {
   
   sidebar_axis = d3.select("#sidebar")
          .select("svg")
-//  sidebar.select("svg")
          .append("g")
          .attr("transform", "translate(" + padding + "," + (6 * padding) + ")");
 
@@ -871,228 +668,126 @@ function create_sidebar(is_event, num_items) {
 
 
 function drawBars(title, pairs) {
-/*
-  sidebar_background.selectAll("rect").remove();
-  sidebar_chart.selectAll("rect").remove();
-  sidebar_background.selectAll("text").remove();
-  sidebar_chart.selectAll("text").remove();
-*/
 
   create_sidebar(false, pairs.length);
-/*
-  sidebar_height = Math.max(sidebar_h, padding * 7 + pairs.length * 20);
 
-  sidebar = d3.select("#sidebar")
-              .append("svg")
-//              .attr("width", w + m[1] + m[3])
-//              .attr("height", h + m[0] + m[2])
-
-              .attr("width", sidebar_w)
-              .attr("height", sidebar_height);
-              //.attr("height", sidebar_h * 2);
-
-
-  sidebar_background = d3.select("#sidebar")
-              .select("svg")
-              .append("g");
-
-
-
-              //.attr("width", sidebar_w)
-              //.attr("height", sidebar_h * 2);
-//              .attr("transform", "translate(" + width/2 + "," + height/2 + ")");
-
-//              .attr("transform", "translate(" + sidebar_x + "," + sidebar_y + ")");
-
-
-//  sidebar.select("#sidebar_chart")//.selectAll("svg")
-//              .attr("id", "sidebar")
-//              .append("svg")
-  sidebar_chart = d3.select("#sidebar")
-              .select("svg")
-              .append("g");
-//              .attr("viewBox", [0, 0, sidebar_w, sidebar_h/2])
-              //.attr("cursor", "grab");
-              //.attr("width", sidebar_w)
-              //.attr("height", sidebar_h * 2);
-//              .attr("transform", "translate(" + width/2 + "," + height/2 + ")");
-
-//              .attr("transform", "translate(" + sidebar_x + "," + sidebar_y + ")");
-*/
-
-//  var pairs = sportCountryCounts(node, genderCategory.ALL, medalCategory.GOLD);
   var countries = [];
   for (var i = 0; i < pairs.length; i++) {
     countries.push(pairs[i].country);
   }
 
-  //  countries.push(pairs[i][0]);
-  //  counts.push(pairs[i][1]);
-  //}
-
-
-/*
-  var sidebar_xScale = d3.scaleBand()
-                      //d3.scaleLinear()
-                     .domain(Object.keys(countryCounts))
-                     //.domain(0, Object.values(countryCounts).length)
-                     .range([0, sidebar_w])
-                     //.range([sidebar_x, sidebar_x + sidebar_w])
-                     .paddingInner(0.1);
-*/
-
-
   var sidebar_top = padding * 3;
 
   var bandScale = d3.scaleBand()
                     .domain(countries)
-                    .range([sidebar_top + padding * 4, sidebar_top + padding * 4 + countries.length * 20])//3 * sidebar_h / 4])
+                    .range([sidebar_top + padding * 4, sidebar_top + padding * 4 + countries.length * 20])
                     .paddingInner(0.05);
 
   var xScale = d3.scaleLinear()
-                     .domain([0,
-  //[d3.min(Object.values(countryCounts), function(d) { return d; }),
-                              d3.max(pairs, function(d) { return d.count; })]) //. function(d) { return d. /* unfinished */)])
-                     .range([padding, sidebar_w - 2 * padding]);//sidebar_h / 2]);
+                     .domain([0, d3.max(pairs, function(d) { return d.count; })])
+                     .range([2 * padding, sidebar_w - 2 * padding]);
 
   var xAxis = d3.axisTop(xScale)
-                .ticks(Math.min(10, d3.max(pairs, function(d) { return d.count; })));
-              //  .scale(xScale)
-              //  .orient("bottom")
-              //  .ticks(1);
-
+                .ticks(Math.min(8, d3.max(pairs, function(d) { return d.count; })));
 
   sidebar_axis.call(xAxis);
   sidebar_axis.style("visibility", "visible");
-//              .attr("y", sidebar_h / 4 + countries.length * 20);
-//  console.log("selection", countryCounts);
-//  console.log("counts", Object.values(countryCounts));
-  //sidebar.selectAll("rect").remove();
-
-
-//  var sb_background_g = sidebar.select("#sidebar_background")
-//                               .select("svg");
-//                               .select("g");
-
-                              
-  //sidebar.select("#sidebar_background")
-  //       .select("svg")
-
-
-
-//  sb_background_g
 
   sidebar_background
-//         .selectAll("rect")
          .append("rect")
+         .attr("class", "chart_bg")
          .attr("x", 0)
          .attr("y", 0)
          .attr("height", sidebar_height)
          .attr("width", sidebar_w)
-         .attr("fill", "hsl(" + 120 + "," + 73 + "%," + 85 + "%)")
          .attr("id", "background_rect");
 
+  sidebar_background
+         .append("text")
+         .attr("class", "chart_title")
+         .attr("x", sidebar_w / 2)
+         .attr("y", padding * 3)
+         .attr("text-anchor", "middle")
+         .text(title);
 
-//  var sb_chart_g = sidebar.select("#sidebar_chart")
-//                            .select("svg");
-//                            .select("g");
-  //sidebar.selectAll("rect")
-//                            .append("svg");
-//  sidebar.select("#sidebar_chart").select("svg").select("g").
+  sidebar_chart
+         .selectAll("text")
+         .data(pairs)
+         .enter()
+         .append("text")
+         .attr("class", "chart_text")
+         .attr("x", function(d, i) {
+            return padding / 2;
+         })
+         .attr("y", function(d) {
+            return bandScale(d.country) + 15;
+         })
+         .attr("text-anchor", "start")
+         .text(function(d) { return d.country; })
+
+         .style("cursor", "default")
+
+         .on("mouseover", function(d, i) {
+              var dx = padding + 5;
+              var dy = bandScale(d.country);
+              console.log("dx", dx);
+              console.log("dy", dy);
+
+            sidebar_chart.append("text")
+                         .attr("x", dx + 30)
+                         .attr("y", dy + bandScale.bandwidth())
+                         .attr("id", "t-bar-text-1-" + i)
+                         .text(function() {
+                            return flag_lookup[d.country].full;
+                         });
+
+            sidebar_chart.append("rect")
+                .attr("x", dx + 30)
+                .attr("y", dy)
+                .attr("id", "t-bar-rect-1-" + i)
+                .attr("width", function() {
+                    return d3.select("#t-bar-text-1-" + i).node().getComputedTextLength();
+
+                })
+                .attr("height", function() {
+                    return bandScale.bandwidth();
+                })
+                .attr("fill", "beige");
+
+            sidebar_chart.append("text")
+                         .attr("id", "t-bar-text-2-" + i)
+                         .attr("x", dx + 30)
+                         .attr("y", dy + bandScale.bandwidth() - 3)
+                         .text(function() {
+                            return flag_lookup[d.country].full;
+                         });
+          })
+          .on("mouseout", function(d, i) {
+
+            d3.select("#t-bar-text-1-" + i).remove();
+            d3.select("#t-bar-text-2-" + i).remove();
+            d3.select("#t-bar-rect-1-" + i).remove();
+
+          });
+
   sidebar_chart
          .selectAll("rect")
          .data(pairs)
          .enter()
          .append("rect")
          .attr("x", function(d, i) {
-            //return i * 50; 
-            return padding;
-            //return sidebar_xScale(countryCounts[d]);
+            return 3 * padding;
          })
          .attr("y", function(d) {
             return bandScale(d.country);
-            //return sidebar_h / 2 - sidebar_yScale(countryCounts[d]);
          })
          .attr("width",  function(d) {
-                //sidebar_xScale.bandwidth())
-            return xScale(d.count);
-            //return bandScale(countryCounts[d]);
+            return xScale(d.count) - 2 * padding;
          })
          .attr("height", function(d) {
-            //return sidebar_yScale(countryCounts[d]);
             return bandScale.bandwidth();
          })
-         .attr("fill", "lightblue");
-//  sidebar.select("#sidebar_background")
-  sidebar_background
- //        .selectAll("text")
-         .append("text")
-         .attr("x", sidebar_w / 2)
-         .attr("y", padding * 3)
-         .attr("text-anchor", "middle")
-         .attr("font-size", 24)
-         .text(title);
-//  sidebar.select("#sidebar_chart")
-  sidebar_chart
-         .selectAll("text")
-         .data(pairs)
-         .enter()
-         .append("text")
-         .attr("x", function(d, i) {
-            return padding;
-//            return sidebar_xScale(countryCounts[d]);
-         })
-         .attr("y", function(d) {
-            return bandScale(d.country) + 15;
-            //return sidebar_h / 2 - sidebar_yScale(countryCounts[d]);
-         })
-         .attr("text-anchor", "start")
-         .text(function(d) { return d.country; });
-
-/*
-
-  var rowEnter = function(rowSelection) {
-    rowSelection.append("rect")
-         .attr("x", function(d, i) {
-            //return i * 50; 
-            return padding;
-            //return sidebar_xScale(countryCounts[d]);
-         })
-         .attr("y", function(d) {
-            return bandScale(d.country);
-            //return sidebar_h / 2 - sidebar_yScale(countryCounts[d]);
-         })
-         .attr("width",  function(d) {
-                //sidebar_xScale.bandwidth())
-            return xScale(d.count);
-            //return bandScale(countryCounts[d]);
-         })
-         .attr("height", function(d) {
-            //return sidebar_yScale(countryCounts[d]);
-            return bandScale.bandwidth();
-         })
-         .attr("fill", "lightblue");
- };
-
-  var rowUpdate = function(rowSelection) {
-                        console.log("rowUpdate", rowSelection);
-                  };
-  var rowExit = function(rowSelection) {};
-
- var virtualScroller = d3.VirtualScroller()
-            .rowHeight(bandScale.bandwidth())
-            .enter(rowEnter)
-            .update(rowUpdate)
-            .exit(rowExit)
-            .svg(sidebar)
-            .totalRows(50)
-            .viewport(d3.select(".viewport"))
-            .data(pairs, function(d) { return d.country; });
-
-  sidebar_chart.call(virtualScroller);
-
-*/
-
+         .attr("class", "blue");
 }
 
 function selected_gender_list() {
@@ -1104,61 +799,53 @@ function selected_gender_list() {
 
 }
 
-function sportCountryCounts(sportList, medalSelection) {
+
+function selected_medal_list() {
+
+  if (selected_medal === "All" || selected_medal === "All_Adjusted")
+    return ["Gold", "Silver", "Bronze"];
+  else
+    return [selected_medal];
+
+}
+
+
+
+function sportCountryCounts(sportList) {
 
   var countryCounts = {};
   var genders = selected_gender_list();
+  var medals = selected_medal_list();
   var categories;
-//  genders = ["Men", "Women"];
-
-
-/*
-  switch (genderSelection) {
-    case genderCategory.ALL:
-      genders = ["Men", "Women"];
-      break;
-    case genderCategory.MEN:
-      genders = ["Men"];
-      break;
-    case genderCategory.WOMEN:
-      genders = ["Women"];
-      break;
-    default:
-      console.log("unknown gender");
-  }
-*/
-  switch (medalSelection) {
-    case medalCategory.ALL:
-    case medalCategory.ALL_ADJ:
-      categories = ["Gold", "Silver", "Bronze"]
-      break;
-    case medalCategory.GOLD:
-      categories = ["Gold"];
-      break;
-    default:
-      console.log("unknown medalCategory");
-  }
-
-
-//  console.log("selected this sport: ", node.data.data.id)
   var medalist, placement, gender, country;
+  var incr = {};
+  if (selected_medal === "All_Adjusted") {
+    incr["Gold"] = 1;
+    incr["Silver"] = 2/3;
+    incr["Bronze"] = 1/3;
+  }
+  else {
+    incr["Gold"] = 1;
+    incr["Silver"] = 1;
+    incr["Bronze"] = 1;
+  }
+
+
   for (var i = 0; i < year_res[selected_year].length; i++) {
-//    if (year_res[selected_year][i].parentId === node.data.data.id) {
 
     if (sportList.includes(year_res[selected_year][i].parentId)) {
-      console.log("found an event: ", year_res[selected_year][i].id);
 
       for (var j = 0; j < year_res[selected_year][i].members.length; j++) {
         medalist = year_res[selected_year][i].members[j];
         placement = medalist.Medal;
         gender = medalist.Gender;
         country = medalist.NOC;
-        if (genders.includes(gender) && categories.includes(placement)) {
+        if (genders.includes(gender) && medals.includes(placement)) {
           if (country in countryCounts) {
-            countryCounts[country] += 1;
+            countryCounts[country] += incr[placement];
           }
           else {
-            countryCounts[country] = 1;
+            countryCounts[country] = incr[placement];
           }
         }
       }
@@ -1175,136 +862,71 @@ function sportCountryCounts(sportList, medalSelection) {
     return second.count - first.count;
   });
 
-  console.log("pairs", pairs);
-
   return pairs;
 
 
-//  return countryCounts;
 }
 
 function eventSidebar() {
 
-/*
-
-  The event sidebar is divided into three sections:
-
-  (1) Title
-
-  (2) Medalists
-
-  (3) Controls
-
-
-*/
-
-
-  console.log("updateSidebar"); 
-/*
-  sidebar_background.selectAll("rect").remove();
-  sidebar_chart.selectAll("rect").remove();
-  sidebar_background.selectAll("text").remove();
-  sidebar_chart.selectAll("text").remove();
-  sidebar_background.selectAll("circle").remove(); 
-*/
-
-//  sidebar_background.selectAll("rect").remove();
-//  sidebar_background.selectAll("text").remove();
-// data = [selection];
-
-//  console.log(selection);
-// sidebar.selectAll("circles").remove();
-
   sorted_members = medalSort(current_selection.data.data.members, selected_gender);
+
   console.log(sorted_members);
 
   create_sidebar(true, sorted_members.length);
 
-  sidebar_axis.style("visibility", "hidden");//remove();
+  sidebar_axis.style("visibility", "hidden");
 
 
   var sidebar_height = padding * 7 + Math.max(sidebar_h, 50 * sorted_members.length); 
 
   sidebar_background.append("rect")
+                    .attr("class", "chart_bg")
                     .attr("x", 0)
                     .attr("y", 0)
                     .attr("width", sidebar_w)
-                    .attr("height", sidebar_height)
-                    .attr("fill", "lightblue");
-  sidebar_background
-         .append("text")
-         .attr("x", sidebar_w / 2)
-         .attr("y", padding * 3)
-         .attr("text-anchor", "middle")
-         .attr("font-size", 24)
-         .text(current_selection.data.data.id.toUpperCase());
+                    .attr("height", sidebar_height);
 
 
-/*
-  sidebar_background.selectAll("rect")
-//         .remove()
-         .data(sorted_members)
-         .enter()
-         .append("rect")
-         .attr("x", 0)
-         .attr("y", function(d, i) { return i * (sidebar_h / sorted_members.length); })
-         .attr("width", sidebar_w)
-         .attr("height", sidebar_h / sorted_members.length)
-         .attr("fill", "lightblue");
-*/
-/*
-         .attr("fill", function(d) {
-//          console.log("adding circle", d);
-          return medalColourLookup(d.Medal);
-         })
-*/
+  sidebar_background.append("text")
+                    .attr("class", "chart_title")
+                    .attr("x", sidebar_w / 2)
+                    .attr("y", padding * 3)
+                    .attr("text-anchor", "middle")
+                    .text(current_selection.data.data.id.capitalize())
+                    .call(wrap, sidebar_w, sidebar_w / 2);
 
-//         .attr("stroke", "black")
-//         .attr("stroke-width", 2)
-//         .attr("opacity", 0.6);
 
-//  var athlete_top = (1 / 8) * sidebar_h;
   var athlete_top = padding * 7;
-//  var control_top = (4 / 5) * sidebar_h;
-
   var title_h = athlete_top;
-  //var control_h = sidebar_h - control_top;
-
-//  var athlete_h = sidebar_h - (title_h + control_h);
 
   sidebar_chart.selectAll("circle")
-                    .data(sorted_members)
-                    .enter()
-                    .append("circle")
-                    .attr("cx", padding)
-                    .attr("cy", function(d, i) { 
-                       //return athlete_top + i * (athlete_h / sorted_members.length) + 15;// + padding; 
-                       return athlete_top + i * 50 + 15;
-                    })
-                    .attr("r", 8)
-                    .attr("fill", function(d) {
-                      return medalColourLookup(d.Medal);
-                    })
-                    .attr("opacity", 0.8);
+               .data(sorted_members)
+               .enter()
+               .append("circle")
+               .attr("cx", padding)
+               .attr("cy", function(d, i) { 
+                  return athlete_top + i * 50 + 15;
+               })
+               .attr("r", 8)
+               .attr("fill", function(d) {
+                  return medalColourLookup(d.Medal);
+               })
+               .attr("opacity", 0.8);
 
 
-
- sidebar_chart.selectAll("text")
-//        .remove()
+  sidebar_chart.selectAll("text")
         .data(sorted_members)
         .enter()
         .append("text")
-//        .attr("x", 25)
-//        .attr("y", 25)
+        .attr("class", "chart_text")
         .attr("x", 5*padding)
         .attr("y", function(d, i) { 
-            //return athlete_top + i * (athlete_h / sorted_members.length) + 20; })
             return athlete_top + i * 50 + 20;
         })
         .attr("text-anchor", "left")
-//        .attr("stroke", "black")
-//        .attr("stroke", "black")
-        .text(function(d) { return d.Athlete; });
+        .text(function(d) { return d.Athlete; })
+        .call(wrap, sidebar_w - 5 * padding, 5 * padding);
 
 
   sidebar_chart.selectAll("image")
@@ -1313,7 +935,6 @@ function eventSidebar() {
           .append("image")
           .attr("x", 2*padding)
           .attr("y", function(d, i) {
-            // return athlete_top + i * (athlete_h / sorted_members.length) + 8; })
               return athlete_top + i * 50 + 8;
           })
           .attr("xlink:href", function(d) { 
@@ -1323,16 +944,39 @@ function eventSidebar() {
           else
            return "flags/" + flag_lookup[d.NOC].two_char.toLowerCase() + ".svg"; 
           })
-//          .attr("width", 10)
-          .attr("height", 15);//(sidebar_h / sorted_members.length) + 20);
-//          .attr("width", 30);
-
-  console.log("done update");
-
-
-
+          .attr("height", 15);
 
 }
+
+
+function wrap(text, width, x) {
+  text.each(function() {
+    var text = d3.select(this),
+        words = text.text().split(/\s+/).reverse(),
+        word,
+        line = [],
+        lineNumber = 0,
+        lineHeight = 1.1, // ems
+        y = text.attr("y"),
+        dy = 0,
+        tspan = text.text(null).append("tspan").attr("x", x).attr("y", y).attr("dy", dy + "em");
+
+    console.log("dy", dy);
+    console.log("tspan1", tspan);
+    while (word = words.pop()) {
+      line.push(word);
+      tspan.text(line.join(" "));
+      if (tspan.node().getComputedTextLength() > width) {
+        line.pop();
+        tspan.text(line.join(" "));
+        line = [word];
+        tspan = text.append("tspan").attr("x", x).attr("y", y).attr("dy", ++lineNumber * lineHeight + dy + "em").text(word);
+      console.log("tspan", tspan);
+      }
+    }
+  });
+}
+
 
 function medalSort(members, gender_selection) {
   var gold = [];
@@ -1379,7 +1023,6 @@ function zoomed() {
   g.attr("transform", d3.event.transform);
 }
 
-//function center() {
-//  return d3.zoomIdentity
-//        .scale(0.5);
-//}
+String.prototype.capitalize = function() {
+    return this.replace(/(?:^|\s)\S/g, function(a) { return a.toUpperCase(); });
+};

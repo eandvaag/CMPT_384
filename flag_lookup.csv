@@ -12,6 +12,7 @@ Antigua and Barbuda,AG,ATG,28,ANT
 Argentina,AR,ARG,32,ARG
 Armenia,AM,ARM,51,ARM
 Aruba,AW,ABW,533,ARU
+Australasia,AA,ANZ,004,ANZ
 Australia,AU,AUS,36,AUS
 Austria,AT,AUT,40,AUT
 Azerbaijan,AZ,AZE,31,AZE
@@ -128,7 +129,7 @@ Kuwait,KW,KWT,414,KUW
 Kyrgyzstan,KG,KGZ,417,KGZ
 Laos,LA,LAO,418,LAO
 Latvia,LV,LVA,428,LAT
-Lebanon,LB,LBN,422,LBN
+Lebanon,LB,LIB,422,LIB
 Lesotho,LS,LSO,426,LES
 Liberia,LR,LBR,430,LBR
 Libya,LY,LBY,434,LBA
@@ -216,7 +217,7 @@ South Korea,KR,KOR,410,KOR
 South Sudan,SS,SSD,728,
 Spain,ES,ESP,724,ESP
 Sri Lanka,LK,LKA,144,SRI
-Sudan,SD,SDN,736,GPD
+Sudan,SD,SUD,736,SUD
 Suriname,SR,SUR,740,SUR
 Svalbard,SJ,SJM,744,
 Swaziland,SZ,SWZ,748,SWZ
@@ -240,9 +241,10 @@ Uganda,UG,UGA,800,UGA
 Ukraine,UA,UKR,804,UKR
 United Arab Emirates,AE,ARE,784,UAE
 United Kingdom,GB,GBR,826,GBR
-USSR,SU,SUN,810,URS
+Union of Soviet Socialist Republics,SU,SUN,810,URS
 United States,US,USA,840,USA
 United Team of Germany at the Olympics,EA,EUA,001,EUA
+United Team,EU,EUN,003,EUN
 Uruguay,UY,URY,858,URU
 Uzbekistan,UZ,UZB,860,UZB
 Vanuatu,VU,VUT,548,VAN

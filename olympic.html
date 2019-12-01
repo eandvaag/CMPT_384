@@ -19,18 +19,59 @@
     <script type="text/javascript" src="https://d3js.org/d3.v5.min.js"></script>
     <script src="https://unpkg.com/d3-simple-slider"></script>
     <script src="http://ariutta.github.io/svg-pan-zoom/dist/svg-pan-zoom.min.js"></script>
-    <script src="virtualScroller.js"></script>
     <script type="text/javascript" src="olympic.js"></script>
 </head>
 <style>
+
+
+
+
+.chart_text {
+  font-family: "Helvetica Neue", Helvetica, sans-serif;
+  font-size: 14px;
+  fill: ghostwhite;
+}
+
+.chart_title {
+  font-family: "Helvetica Neue", Helvetica, sans-serif;
+  font-size: 24px;
+  fill: ghostwhite;
+}
+
+.button_text {
+  font-family: "Helvetica Neue", Helvetica, sans-serif;
+  font-size: 18px;
+  fill: ghostwhite;
+}
+
+.green {
+  fill: rgb(225, 255, 205);
+}
+
+.darkgreen {
+  fill: rgb(155, 185, 135);
+}
+
+.branch {
+  stroke: ghostwhite;
+}
+
+.blue {
+  fill: rgb(220, 230, 250);
+}
+
+.chart_bg {
+  fill: rgb(47, 69, 69);
+}
+
 body {
   font-family: "Helvetica Neue", Helvetica, sans-serif;
   font-size: 14px;
-  color: #333;
+  color: ghostwhite;
 }
 </style>
 
-<body>
+<body bgcolor="slategray">
   <div style="text-align: center">
   <div id="title" width="1345" style="display: inline-block">
   <h2>
@@ -39,11 +80,8 @@ body {
   </div>
   </div>
 <br>
-<!--
-  <div id="controls">
-    <input type="checkbox" name="box1" value="checked">checkbox1</input>
-  </div>
--->
+
+  <div id="display_wrapper" align="center">
 
   <div id="control" style="height: 625px !important;
   width: 335px !important;
@@ -52,32 +90,22 @@ body {
 
 
 
-  <div id="chart" style=
-  "width: 675px !important;
+  <div id="chart" style="height: 625px !important;
+   width: 675px !important;
    border:1px solid #000;
    display: inline-block"></div>
-<!--
-  <div id="sidebar" width="500" height="625" style="display: inline-block" overflow="scroll !important"></div>
--->
-<!--
-  <div id="sidebar" width="960 !important" height="500 !important" style="display: inline-block" overflow="scroll !important"></div>
--->
 
   <div id="sidebar" style="height: 625px !important;
   width: 335px !important;
   border:1px solid #000;
   overflow-y: scroll !important;
+  background-color: rgb(47, 69, 69);
   display: inline-block;"></div>
+
+</div>
 
   
   <div id="slider-time" align="center"></div>
-<!--
-  <div id="sidebar_temp"></div>
--->
 
-<!--
-    <div id="sidebar_background"></div>
-    <div id="sidebar_chart"></div>
--->
 </body>
 </html>
