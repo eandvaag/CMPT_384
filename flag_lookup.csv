@@ -35,6 +35,7 @@ Bouvet Island,BV,BVT,74,
 Brazil,BR,BRA,76,BRA
 British Indian Ocean Territory,IO,IOT,86,
 British Virgin Islands,VG,VGB,92,IVB
+British West Indies,B1,BWI,006,BWI
 Brunei,BN,BRN,96,BRU
 Bulgaria,BG,BGR,100,BUL
 Burkina Faso,BF,BFA,854,BUR
@@ -108,6 +109,7 @@ Honduras,HN,HND,340,HON
 Hong Kong,HK,HKG,344,HKG
 Hungary,HU,HUN,348,HUN
 Iceland,IS,ISL,352,ISL
+Independent Olympic Participants,ZZ,IOP,008,IOP
 India,IN,IND,356,IND
 Indonesia,ID,IDN,360,INA
 Iran,IR,IRN,364,IRI
@@ -160,6 +162,7 @@ Namibia,NA,NAM,516,NAM
 Nauru,NR,NRU,520,NRU
 Nepal,NP,NPL,524,NEP
 Netherlands,NL,NLD,528,NED
+Netherlands Antilles,NL,AHO,007,AHO
 New Caledonia,NC,NCL,540,
 New Zealand,NZ,NZL,554,NZL
 Nicaragua,NI,NIC,558,NCA
@@ -189,6 +192,7 @@ Republic of the Congo,CG,COG,178,CGO
 Reunion,RE,REU,638,
 Romania,RO,ROU,642,ROU
 Russia,RU,RUS,643,RUS
+Russian Empire,RU,RU1,005,RU1
 Rwanda,RW,RWA,646,RWA
 Saint Barthelemy,BL,BLM,652,
 "Saint Helena, Ascension and Tristan da Cunha",SH,SHN,654,
@@ -203,6 +207,7 @@ Sao Tome and Principe,ST,STP,678,STP
 Saudi Arabia,SA,SAU,682,KSA
 Senegal,SN,SEN,686,SEN
 Serbia,RS,SRB,688,SRB
+Serbia and Montenegro,S1,SCG,009,SCG
 Seychelles,SC,SYC,690,SEY
 Sierra Leone,SL,SLE,694,SLE
 Singapore,SG,SGP,702,SIN

@@ -1,0 +1,37 @@
+
+Erik Andvaag
+NSID: eaa299
+Student ID: 11199809
+
+Dr. Debajyoti Mondal
+CMPT 384.3
+
+
+
+CMPT384-2019-33 
+
+(Assignment 6 README)
+
+
+There are two ways to launch the project:
+
+
+METHOD 1
+
+  Go to:
+
+       https://eandvaag.github.io/CMPT_384/olympic.html
+
+
+
+METHOD 2 
+
+  Create a local server:
+
+      python3 -m http.server 8888
+
+
+  Go to: 
+
+      http://localhost:8888/olympic.html
+

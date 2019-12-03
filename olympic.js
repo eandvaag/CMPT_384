@@ -18,44 +18,64 @@ var g;
 var sidebar;
 var sidebar_background;
 var sidebar_chart;
+var control_background;
 var sidebar_axis;
 var padding = 15;
 
-
-var current_selection = null;
-
+/* Width of main panel */
 var width = 675;
+
+/* Height of main panel */
 var height = 625;
 
-var sidebar_x = 675;
-var sidebar_y = 0;
+/* Width of righthand sidebar */
 var sidebar_w = 300;
+
+/* Height of righthand sidebar */
 var sidebar_h = height;
+
 var sidebar_created = false;
+
+/* Radius of control buttons */
 var button_r = 20;
 
-
+/* Height of lefthand control sidebar */
 var control_h = height;
+
+/* Width of lefthand control sidebar */
 var control_w = 335;
 
-var year_list = [];
-var year_res = {};
-var year_sports = {};
-var year_events = {};
-var year_strat = {};
-var year_city_map = {};
-
-
-var pictogram_lookup = {};
-var flag_lookup = {};
 
 var zoom_g = d3.zoom();
 
+
+/* Lookup for all results, keys are years */
+var year_res = {};
+
+/* Lookup for the sports held in a given year */
+var year_sports = {};
+
+/* Lookup for the events held in a given year */
+var year_events = {};
+
+/* Stratified year-data for the tree */
+var year_strat = {};
+
+/* Maps year numbers to city names */
+var year_city_map = {};
+
+/* Maps sport names to pictogram names */
+var pictogram_lookup = {};
+
+/* Maps 3 character country codes to 2-character flag codes */
+var flag_lookup = {};
+
+/* Initial settings */
 var selected_year = 1896;
-
-
 var selected_gender = "All";
 var selected_medal = "Gold";
+var current_selection = null;
+
 
 
 d3.csv("olympic_data.csv" + '?' + Math.floor(Math.random() * 1000)).then(function(data, error) {
@@ -79,15 +99,12 @@ d3.csv("olympic_data.csv" + '?' + Math.floor(Math.random() * 1000)).then(functio
       if (f_error)
         console.log(f_error);
       else {
-        console.log("found flag lookup");
         f_data.forEach(function(d) {
-          if (d.three_char === "EUN")
-            console.log("found EUN");
           flag_lookup[d.three_char] = { "full": d.full_name,
                                         "two_char": d.two_char };
         });
       }
-    
+ 
     var year;
     var sport;
     var dEvent;
@@ -108,7 +125,6 @@ d3.csv("olympic_data.csv" + '?' + Math.floor(Math.random() * 1000)).then(functio
         year_city_map[year] = results[i].City;
       }
 
-
       if (!(sport + "_" + dEvent in year_events[year])) {
 
         year_events[year][sport + "_" + dEvent] = {id: dEvent,
@@ -125,7 +141,8 @@ d3.csv("olympic_data.csv" + '?' + Math.floor(Math.random() * 1000)).then(functio
       }
      
     }
-    
+
+   
     for (var year of Object.keys(year_events)) {
       for (var dEvent of Object.keys(year_events[year])) {
         year_res[year].push(year_events[year][dEvent]);
@@ -141,7 +158,7 @@ d3.csv("olympic_data.csv" + '?' + Math.floor(Math.random() * 1000)).then(functio
       year_strat[Object.keys(year_res)[i]] = d3.stratify()(Object.values(year_res)[i]);
     }
 
-    initPlot();
+    init_plot();
 
     });
 
@@ -149,7 +166,7 @@ d3.csv("olympic_data.csv" + '?' + Math.floor(Math.random() * 1000)).then(functio
  
 });
 
-function initPlot() {
+function init_plot() {
 
   svg = d3.select("#chart")
           .append("svg")
@@ -216,12 +233,11 @@ function initPlot() {
                         .attr("class", "button")
                         .style("cursor", "pointer")
                         .on("click", function(d, i) {
-                          console.log("this", this);
                           prev_gender_selection.select("circle").attr("fill", "rgb(225, 255, 205)");
                           d3.select(this).select("circle").attr("fill", "rgb(155, 185, 135)");
                           prev_gender_selection = d3.select(this);
                           selected_gender = d;
-                          drawPlot();
+                          draw_plot();
                           if (sidebar_created) {
                             node_update();
                           }
@@ -242,12 +258,11 @@ function initPlot() {
                         .attr("class", "button")
                         .style("cursor", "pointer")
                         .on("click", function(d, i) {
-                          console.log("this", this);
                           prev_medal_selection.select("circle").attr("fill", "rgb(225, 255, 205)");
                           d3.select(this).select("circle").attr("fill", "rgb(155, 185, 135)");
                           prev_medal_selection = d3.select(this);
                           selected_medal = d;
-                          drawPlot();
+                          draw_plot();
                           if (sidebar_created) {
                             node_update();
                           }
@@ -301,7 +316,6 @@ function initPlot() {
                     .attr("font-size", 16)
 
                     .text(function(d, i) {
-                        console.log("gender_text[i]", gender_text[i]);
                         return gender_text[i];
                     });
 
@@ -337,6 +351,7 @@ function initPlot() {
                      .on("onchange", val => {
                         if (!(parseInt(selected_year) === 1900 + val.getYear())) {
                           remove_sidebar();
+                          current_selection = null;
 
                           zoom_g.scaleTo(svg, 0.6);
                           zoom_g.translateTo(svg, -width/10 + padding * 3, -height/10 + padding * 3);
@@ -345,14 +360,13 @@ function initPlot() {
 
                           d3.select("#control_title").text(year_city_map[selected_year] + ": " + selected_year);
 
-                          drawPlot();
+                          draw_plot();
                           if (selected_year in year_res) {
-                            yearSidebar(selected_year);
+                            year_sidebar(selected_year);
                           }
-                          updateControlText();
+                          update_control_text();
                         }
                      });
-  console.log("keys(year_res)", Object.keys(year_res));
 
   
   var gTime = d3.select("#slider-time")
@@ -365,9 +379,9 @@ function initPlot() {
 
   gTime.call(sliderTime);
 
-  drawPlot();
-  yearSidebar(selected_year);
-  updateControlText();
+  draw_plot();
+  year_sidebar(selected_year);
+  update_control_text();
 
   control_background.append("line")
                     .attr("x1", 0)
@@ -392,9 +406,13 @@ function initPlot() {
                     .attr("stroke", "ghostwhite");
 }
 
-function updateControlText() {
 
-  console.log("selected year", selected_year);
+/*
+  Updates the text in the control sidebar to show 
+  the selected year and corresponding city.
+*/
+function update_control_text() {
+
   control_background.selectAll("text").remove();
 
   /* Control title text */  
@@ -408,6 +426,7 @@ function updateControlText() {
          .call(wrap, control_w, control_w / 2)
          .attr("id", "#control_title");
 
+  /* Gender category text */
   control_background
          .append("text")
          .attr("class", "chart_title")
@@ -417,6 +436,7 @@ function updateControlText() {
          .text("Gender Category")
          .call(wrap, control_w, control_w / 2)
 
+  /* Medal category text */
   control_background
          .append("text")
          .attr("class", "chart_title")
@@ -429,8 +449,10 @@ function updateControlText() {
 }
 
 
-function drawPlot() {
-  console.log("in drawPlot");
+/*
+  Draws the main tree in the centre panel.
+*/
+function draw_plot() {
 
   g.selectAll("path").remove();
   g.selectAll("circle").remove();
@@ -440,8 +462,10 @@ function drawPlot() {
   g2.selectAll("rect").remove();
   g2.selectAll("text").remove();
 
+
+  /* If the olympics were not held during the selected year,
+     display an appropriate message */
   if (!(selected_year in year_strat)) {
-    console.log("no olympics held in ", selected_year);
     var message;
     if (selected_year == 1916)
       message = "No olympics held due to WW1";
@@ -472,17 +496,19 @@ function drawPlot() {
     zoom_g.translateExtent([[-zoom_k, -zoom_k], 
                             [zoom_k, zoom_k]]);
 
-    sportNodes = [];
-    eventNodes = [];
+    sport_nodes = [];
+    event_nodes = [];
     for (var i = 0; i < nodes.length; i++) {
       if (nodes[i].data.data.parentId in year_strat)
-        sportNodes.push(nodes[i]);
+        sport_nodes.push(nodes[i]);
       else if (year_sports[selected_year].includes(nodes[i].data.data.parentId))
-        eventNodes.push(nodes[i]);
+        event_nodes.push(nodes[i]);
       else if (current_selection == null)
-        current_selection = nodes[i];
+        current_selection = nodes[i];   /* When year is first selected, show the overall results in the sidebar */
     }
 
+
+    /* Draw branches of the tree */
     g.selectAll("path")
      .data(links)
      .enter()
@@ -495,7 +521,7 @@ function drawPlot() {
      .attr("stroke", "black")
      .attr("stroke-width", 2)
      .attr("opacity", function(d) {
-
+        /* Opacity is used to hide the events that were not open to the selected gender */
         if (year_sports[selected_year].includes(d.source.data.id)) {
           for (var i = 0; i < d.target.data.data.members.length; i++) {
             if (selected_gender_list().includes(d.target.data.data.members[i].Gender))
@@ -507,6 +533,8 @@ function drawPlot() {
 
       });
 
+
+    /* Draw node circles */
     g.selectAll("circle")
      .data(nodes)
      .enter()
@@ -519,13 +547,14 @@ function drawPlot() {
         return 10;
      })
      .attr("class", function(d) {
+      /* Sport nodes are green (parent is in year_strat); all other nodes are blue */
       if (d.data.data.parentId in year_strat)
         return "green";
       else
         return "blue";
       })
      .attr("opacity", function(d) {
-
+        /* Opacity is used to hide the events that were not open to the selected gender */
         if (year_sports[selected_year].includes(d.data.data.parentId)) {
           for (var i = 0; i < d.data.data.members.length; i++) {
             if (selected_gender_list().includes(d.data.data.members[i].Gender))
@@ -541,8 +570,10 @@ function drawPlot() {
       })
       .attr("cursor", "pointer"); 
 
+
+    /* Add pictogram images */
     g.selectAll("image")
-      .data(sportNodes)
+      .data(sport_nodes)
       .enter()
       .append("image")
       .attr("transform", function(d) { return "translate(" + d3.pointRadial(d.x, d.y) + ")"; })
@@ -551,7 +582,6 @@ function drawPlot() {
       .attr("height", 30)
       .attr("width", 30)
       .attr("xlink:href", function(d) { 
-         console.log("lookup: ", pictogram_lookup[d.data.data.id]);
          return "pictograms/" + pictogram_lookup[d.data.data.id]; 
       })
       .on("click", function(d) {
@@ -560,9 +590,10 @@ function drawPlot() {
       })
       .attr("cursor", "pointer");
 
-    console.log("nodes", nodes);
+
+    /* Add event names */
     g.selectAll("text")
-     .data(eventNodes)
+     .data(event_nodes)
      .enter()
      .append("text")
      .attr("class", "chart_text")
@@ -592,45 +623,70 @@ function drawPlot() {
   }
 }
 
+
 function remove_sidebar() {
   sidebar_created = false;
   sidebar.remove();
 
 }
 
+
+/*
+  Called when the user clicks on a node.
+  Calls the appropriate function to update the sidebar.
+*/
 function node_update() {
 
   remove_sidebar();
+
   if (current_selection.data.data.id in year_res) {
-    yearSidebar(current_selection.data.data.id);
+    /* Centre node selected */
+    year_sidebar(current_selection.data.data.id);
   }
   else if (current_selection.data.data.parentId in year_res) {
-    sportSidebar();
+    /* Sport node selected */
+    sport_sidebar();
   }
   else {
-    eventSidebar();
+    /* Event node selected */
+    event_sidebar();
   }
 }
 
-function yearSidebar(year) {
 
-  var sportList = [];
-  for (var i = 0; i < sportNodes.length; i++) {
-    sportList.push(sportNodes[i].data.data.id);
+/*
+  Updates the sidebar with a bar chart showing the overall 
+  medal counts of each country for the selected year.
+*/
+function year_sidebar(year) {
+
+  var sport_list = [];
+  for (var i = 0; i < sport_nodes.length; i++) {
+    sport_list.push(sport_nodes[i].data.data.id);
   }
-  var pairs = sportCountryCounts(sportList);
+  var pairs = sport_country_counts(sport_list);
 
-  drawBars(year + ": Overall Results", pairs);
-
-}
-
-function sportSidebar() {
-  var pairs = sportCountryCounts([current_selection.data.data.id]);
-
-  drawBars(current_selection.data.data.id, pairs);
+  draw_bars(year + ": Overall Results", pairs);
 
 }
 
+
+/*
+  Updates the sidebar with a bar chart showing the medal
+  counts of each country for the selected sport.
+*/
+function sport_sidebar() {
+  var pairs = sport_country_counts([current_selection.data.data.id]);
+
+  draw_bars(current_selection.data.data.id, pairs);
+
+}
+
+/*
+  Adds the sidebar svg and the basic sidebar elements:
+    - sidebar g elements - sidebar_background, sidebar_chart
+    - sidebar axis (for bar charts)
+*/
 function create_sidebar(is_event, num_items) {
 
   sidebar_created = true;
@@ -642,7 +698,6 @@ function create_sidebar(is_event, num_items) {
   else {
     sidebar_height = Math.max(sidebar_h, padding * 7 + num_items * 20);
   }
-
 
   sidebar = d3.select("#sidebar")
               .append("svg")
@@ -663,11 +718,18 @@ function create_sidebar(is_event, num_items) {
          .append("g")
          .attr("transform", "translate(" + padding + "," + (6 * padding) + ")");
 
-
 }
 
 
-function drawBars(title, pairs) {
+/*
+  Draws a bar chart on the sidebar.
+
+  @param title: title to display at top of bar chart
+  @param pairs: list of Objects for each country, containing country name
+                and medal count attributes
+
+*/
+function draw_bars(title, pairs) {
 
   create_sidebar(false, pairs.length);
 
@@ -690,9 +752,12 @@ function drawBars(title, pairs) {
   var xAxis = d3.axisTop(xScale)
                 .ticks(Math.min(8, d3.max(pairs, function(d) { return d.count; })));
 
+
+  /* Make the bar chart axis visible */
   sidebar_axis.call(xAxis);
   sidebar_axis.style("visibility", "visible");
 
+  /* Add the background rect */
   sidebar_background
          .append("rect")
          .attr("class", "chart_bg")
@@ -702,6 +767,7 @@ function drawBars(title, pairs) {
          .attr("width", sidebar_w)
          .attr("id", "background_rect");
 
+  /* Add the sidebar title */
   sidebar_background
          .append("text")
          .attr("class", "chart_title")
@@ -710,6 +776,7 @@ function drawBars(title, pairs) {
          .attr("text-anchor", "middle")
          .text(title);
 
+  /* Add the bar chart text */
   sidebar_chart
          .selectAll("text")
          .data(pairs)
@@ -724,14 +791,14 @@ function drawBars(title, pairs) {
          })
          .attr("text-anchor", "start")
          .text(function(d) { return d.country; })
-
          .style("cursor", "default")
 
+         /* Mousing over an abbreviated country name causes a tooltip
+            to appear, which gives the full country name */
          .on("mouseover", function(d, i) {
+
               var dx = padding + 5;
               var dy = bandScale(d.country);
-              console.log("dx", dx);
-              console.log("dy", dy);
 
             sidebar_chart.append("text")
                          .attr("x", dx + 30)
@@ -770,6 +837,7 @@ function drawBars(title, pairs) {
 
           });
 
+  /* Add the bars to the bar chart */
   sidebar_chart
          .selectAll("rect")
          .data(pairs)
@@ -790,6 +858,11 @@ function drawBars(title, pairs) {
          .attr("class", "blue");
 }
 
+
+/*
+  Returns a list containing the appropriate genders for
+  the current gender category selection
+*/
 function selected_gender_list() {
 
   if (selected_gender === "All")
@@ -800,6 +873,10 @@ function selected_gender_list() {
 }
 
 
+/*
+  Returns a list containing the appropriate medal types
+  (Gold, Silver, Bronze) for the current medal category selection
+*/
 function selected_medal_list() {
 
   if (selected_medal === "All" || selected_medal === "All_Adjusted")
@@ -810,15 +887,24 @@ function selected_medal_list() {
 }
 
 
+/*
+  Returns a sorted list of Objects. Each Object contains the 
+  name of the country it represents and the number of medals that
+  country won in the given list of sports in the selected year.
 
-function sportCountryCounts(sportList) {
+  @param sport_list: list containing the names of the sports whose
+                     counts we are interested in
 
-  var countryCounts = {};
+*/
+function sport_country_counts(sport_list) {
+
+  var country_counts = {};
   var genders = selected_gender_list();
   var medals = selected_medal_list();
   var categories;
   var medalist, placement, gender, country;
   var incr = {};
+
   if (selected_medal === "All_Adjusted") {
     incr["Gold"] = 1;
     incr["Silver"] = 2/3;
@@ -830,22 +916,27 @@ function sportCountryCounts(sportList) {
     incr["Bronze"] = 1;
   }
 
-
+  /* Search through all the members of the selected year */
   for (var i = 0; i < year_res[selected_year].length; i++) {
 
-    if (sportList.includes(year_res[selected_year][i].parentId)) {
+    if (sport_list.includes(year_res[selected_year][i].parentId)) {
+      /* Found an event that is a descendent of one of the given sports */
 
+      /* Search through the medalists in this event */
       for (var j = 0; j < year_res[selected_year][i].members.length; j++) {
         medalist = year_res[selected_year][i].members[j];
         placement = medalist.Medal;
         gender = medalist.Gender;
         country = medalist.NOC;
+
+        /* A medalist contributes to their country's medal count if their 
+           gender and medal placement matches the current selections */
         if (genders.includes(gender) && medals.includes(placement)) {
-          if (country in countryCounts) {
-            countryCounts[country] += incr[placement];
+          if (country in country_counts) {
+            country_counts[country] += incr[placement];
           }
           else {
-            countryCounts[country] = incr[placement];
+            country_counts[country] = incr[placement];
           }
         }
       }
@@ -853,11 +944,13 @@ function sportCountryCounts(sportList) {
   }
 
 
-
-  pairs = Object.keys(countryCounts).map(function(key) {
-            return {"country" : key, "count": countryCounts[key]};
+  /* For each country, create a pair Object with country name and
+     medal count */
+  pairs = Object.keys(country_counts).map(function(key) {
+            return {"country" : key, "count": country_counts[key]};
   });
 
+  /* Sort pairs */
   pairs.sort(function(first, second) {
     return second.count - first.count;
   });
@@ -867,19 +960,23 @@ function sportCountryCounts(sportList) {
 
 }
 
-function eventSidebar() {
 
-  sorted_members = medalSort(current_selection.data.data.members, selected_gender);
+/*
+  Updates the sidebar with the results from a selected event, 
+  displaying a list of the medalists
+*/
+function event_sidebar() {
 
-  console.log(sorted_members);
+  sorted_members = medal_sort(current_selection.data.data.members);
 
   create_sidebar(true, sorted_members.length);
 
+  /* Hide the sidebar axis */
   sidebar_axis.style("visibility", "hidden");
-
 
   var sidebar_height = padding * 7 + Math.max(sidebar_h, 50 * sorted_members.length); 
 
+  /* Add the background rect */
   sidebar_background.append("rect")
                     .attr("class", "chart_bg")
                     .attr("x", 0)
@@ -887,7 +984,7 @@ function eventSidebar() {
                     .attr("width", sidebar_w)
                     .attr("height", sidebar_height);
 
-
+  /* Add the sidebar title (name of the event) */
   sidebar_background.append("text")
                     .attr("class", "chart_title")
                     .attr("x", sidebar_w / 2)
@@ -898,8 +995,8 @@ function eventSidebar() {
 
 
   var athlete_top = padding * 7;
-  var title_h = athlete_top;
 
+  /* Add circles, coloured to show each medalist's placement */
   sidebar_chart.selectAll("circle")
                .data(sorted_members)
                .enter()
@@ -910,11 +1007,12 @@ function eventSidebar() {
                })
                .attr("r", 8)
                .attr("fill", function(d) {
-                  return medalColourLookup(d.Medal);
+                  return medal_colour_lookup(d.Medal);
                })
                .attr("opacity", 0.8);
 
 
+  /* Add the names of the medalists */
   sidebar_chart.selectAll("text")
         .data(sorted_members)
         .enter()
@@ -929,6 +1027,7 @@ function eventSidebar() {
         .call(wrap, sidebar_w - 5 * padding, 5 * padding);
 
 
+  /* Add the flag of each medalist's country */
   sidebar_chart.selectAll("image")
           .data(sorted_members)
           .enter()
@@ -938,9 +1037,8 @@ function eventSidebar() {
               return athlete_top + i * 50 + 8;
           })
           .attr("xlink:href", function(d) { 
-          console.log("d.NOC: ", d.NOC);
           if (!(d.NOC in flag_lookup))
-            console.log("unknown flag");
+            console.log("unknown flag", d.NOC);
           else
            return "flags/" + flag_lookup[d.NOC].two_char.toLowerCase() + ".svg"; 
           })
@@ -948,7 +1046,14 @@ function eventSidebar() {
 
 }
 
+/*
+  For wrapping text.
 
+  @param text: text to display
+  @param width: max width before text wraps
+  @param x: relative location of text (offset)
+
+*/
 function wrap(text, width, x) {
   text.each(function() {
     var text = d3.select(this),
@@ -956,13 +1061,11 @@ function wrap(text, width, x) {
         word,
         line = [],
         lineNumber = 0,
-        lineHeight = 1.1, // ems
+        lineHeight = 1.1,
         y = text.attr("y"),
         dy = 0,
         tspan = text.text(null).append("tspan").attr("x", x).attr("y", y).attr("dy", dy + "em");
 
-    console.log("dy", dy);
-    console.log("tspan1", tspan);
     while (word = words.pop()) {
       line.push(word);
       tspan.text(line.join(" "));
@@ -971,23 +1074,22 @@ function wrap(text, width, x) {
         tspan.text(line.join(" "));
         line = [word];
         tspan = text.append("tspan").attr("x", x).attr("y", y).attr("dy", ++lineNumber * lineHeight + dy + "em").text(word);
-      console.log("tspan", tspan);
       }
     }
   });
 }
 
+/*
+  Sorts a list of medalists according to their placement.
 
-function medalSort(members, gender_selection) {
+  @param members: list of medalists
+*/
+function medal_sort(members) {
   var gold = [];
   var silver = [];
   var bronze = [];
-  var other = [];
 
-  if (gender_selection === "All")
-    genders = ["Men", "Women"];
-  else
-    genders = [gender_selection];
+  genders = selected_gender_list();
 
   for (var i = 0; i < members.length; i++) {
     if (members[i].Medal === "Gold" && genders.includes(members[i].Gender))
@@ -997,15 +1099,18 @@ function medalSort(members, gender_selection) {
     else if (members[i].Medal === "Bronze" && genders.includes(members[i].Gender))
       bronze.push(members[i]);
     else
-      console.log("excluded", members[i]);
+      console.log("unknown medal category", members[i].Medal);
   }
 
-  return gold.concat(silver, bronze, other);
+  return gold.concat(silver, bronze);
 
 }
 
 
-function medalColourLookup(medal) {
+/*
+  Colour lookup for medal categories.
+*/
+function medal_colour_lookup(medal) {
 
   if (medal === "Bronze")
     return "rgb(217, 95, 14)";
@@ -1019,10 +1124,19 @@ function medalColourLookup(medal) {
 
 }
 
+/*
+  For capitalizing Strings.
+*/
+String.prototype.capitalize = function() {
+    return this.replace(/(?:^|\s)\S/g, function(a) { return a.toUpperCase(); });
+};
+
+
+/*
+  For re-sizing the tree.
+*/
 function zoomed() {
   g.attr("transform", d3.event.transform);
 }
 
-String.prototype.capitalize = function() {
-    return this.replace(/(?:^|\s)\S/g, function(a) { return a.toUpperCase(); });
-};
+
